@@ -1,3 +1,6 @@
+// Force dynamic
+export const dynamic = "force-dynamic";
+
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
