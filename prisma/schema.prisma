@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  role      String   @default("user")
+  bookings  Booking[]
+  createdAt DateTime @default(now())
+}
+
+model Destination {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  tagline     String
+  description String
+  image       String
+  rating      Float     @default(4.5)
+  packages    Package[]
+  createdAt   DateTime  @default(now())
+}
+
+model Package {
+  id              String      @id @default(cuid())
+  destinationId   String
+  destination     Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  title           String
+  duration        Int
+  pricePerPerson  Int
+  meals           String
+  tours           Int
+  airportTransfer Boolean     @default(false)
+  privateCab      Boolean     @default(false)
+  flights         Boolean     @default(false)
+  label           String?
+  bookings        Booking[]
+  createdAt       DateTime    @default(now())
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  packageId String
+  package   Package  @relation(fields: [packageId], references: [id])
+  travelers Int
+  totalPrice Int
+  status    String   @default("pending")
+  paymentId String?
+  payment   Payment?
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  razorpayId String?
+  amount    Int
+  currency  String   @default("INR")
+  status    String   @default("pending")
+  createdAt DateTime @default(now())
+}
