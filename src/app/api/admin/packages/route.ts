@@ -1,3 +1,6 @@
+// Force dynamic - reads cookies at runtime
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { NextResponse } from "next/server";
