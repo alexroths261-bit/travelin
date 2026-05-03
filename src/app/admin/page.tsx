@@ -83,7 +83,7 @@ export default function AdminPage() {
                   {bookings.map(b => (
                     <tr key={b.id} className="hover:bg-gray-50/50 transition">
                       <td className="px-6 py-4"><div className="font-medium text-gray-900">{b.user.name}</div><div className="text-xs text-gray-400">{b.user.email}</div></td>
-                      <td className="px-6 py-4"><div className="font-medium text-gray-900">{b.pkg.destination.name}</div><div className="text-xs text-gray-400">{b.pkg.duration}-Day Plan</div></td>
+                      <td className="px-6 py-4"><div className="font-medium text-gray-900">{b.package.destination.name}</div><div className="text-xs text-gray-400">{b.package.duration}-Day Plan</div></td>
                       <td className="px-6 py-4 text-gray-600">{b.travelers}</td>
                       <td className="px-6 py-4 font-semibold text-gray-900">₹{b.totalPrice.toLocaleString("en-IN")}</td>
                       <td className="px-6 py-4">{statusBadge(b.status)}</td>
