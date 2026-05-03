@@ -9,7 +9,7 @@ interface Booking {
   status: string;
   createdAt: string;
   user: { name: string; email: string };
-  pkg: { title: string; duration: number; destination: { name: string } };
+  package: { title: string; duration: number; destination: { name: string } };
 }
 
 interface Stats { revenue: number; bookings: number; users: number; packages: number; }
