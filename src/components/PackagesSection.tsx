@@ -5,6 +5,7 @@ import BookingModal from "./BookingModal";
 
 interface Pkg {
   id: string;
+  description: string;
   title: string;
   duration: number;
   pricePerPerson: number;
@@ -31,6 +32,15 @@ export default function PackagesSection({ destinations }: { destinations: Dest[]
   const visible = useRef(false);
 
   useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith("#pkg-")) {
+      const slug = hash.replace("#pkg-", "");
+      const found = destinations.find(d => d.slug === slug);
+      if (found) setActive(slug);
+    }
+  }, []);
+
+  useEffect(() => {
     const obs = new IntersectionObserver(([e]) => {
       if (e.isIntersecting && !visible.current) { visible.current = true; ref.current?.classList.add("visible"); }
     }, { threshold: 0.1 });
@@ -55,7 +65,7 @@ export default function PackagesSection({ destinations }: { destinations: Dest[]
   };
 
   return (
-    <section id="packages" ref={ref} className="fade-section py-20 sm:py-28 px-5 sm:px-8 bg-gray-50">
+    <section id="packages" ref={ref} className="py-20 sm:py-28 px-5 sm:px-8 bg-gray-50">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-14">
           <div className="section-badge mb-4"><span className="text-xs">✦</span> Travel Packages</div>
@@ -79,7 +89,7 @@ export default function PackagesSection({ destinations }: { destinations: Dest[]
                     <h3 className="font-serif text-lg font-bold text-gray-900 mt-3">{pkg.duration}-Day Plan</h3>
                   </div>
                   <div className="flex-1">
-                    <ul className="space-y-2.5 mb-6">
+                    <ul className="space-y-2.5 mb-4">
                       <li className="flex items-start gap-2 text-sm text-gray-600"><Check className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" />{pkg.duration - 1} Nights Stay</li>
                       <li className="flex items-start gap-2 text-sm text-gray-600"><Check className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" />{pkg.meals}</li>
                       <li className="flex items-start gap-2 text-sm text-gray-600"><Check className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" />{pkg.tours} Guided Tour{pkg.tours > 1 ? "s" : ""}</li>
@@ -88,6 +98,19 @@ export default function PackagesSection({ destinations }: { destinations: Dest[]
                       {pkg.flights && <li className="flex items-start gap-2 text-sm text-gray-600"><Check className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" />Flights Included</li>}
                     </ul>
                   </div>
+                    {pkg.description && (
+                      <div className="mb-6 border-t border-gray-100 pt-3">
+                        <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wider">Itinerary Preview</p>
+                        <div className="space-y-1.5">
+                          {pkg.description.split("Day ").filter(Boolean).slice(0, 3).map((day, i) => {
+                            const parts = day.split(":");
+                            return <p key={i} className="text-xs text-gray-500"><span className="font-semibold text-gray-700">Day {parts[0]?.trim()}:</span> {parts[1]?.trim()}</p>;
+                          })}
+                          {pkg.description.split("Day ").filter(Boolean).length > 3 && <p className="text-xs text-brand-600 font-medium">+ {pkg.description.split("Day ").filter(Boolean).length - 3} more days</p>}
+                        </div>
+                      </div>
+                    )}
+
                   <div>
                     <div className="text-2xl font-black text-gray-900">₹{pkg.pricePerPerson.toLocaleString("en-IN")}</div>
                     <div className="text-xs text-gray-400 mb-4">per person</div>

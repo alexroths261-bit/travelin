@@ -66,6 +66,7 @@ export default function Navbar() {
                 <>
                   <span className={`text-sm font-medium ${scrolled ? "text-gray-700" : "text-white/90"}`}>Hi, {user.name.split(" ")[0]}</span>
                   {user.role === "admin" && <a href="/admin" className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-brand-100 text-brand-700 hover:bg-brand-200 transition">Admin</a>}
+                  <a href="/my-bookings" className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition">My Bookings</a>
                   <button onClick={handleLogout} className={`p-2 rounded-lg transition ${scrolled ? "text-gray-500 hover:bg-gray-100 hover:text-red-500" : "text-white/70 hover:bg-white/10 hover:text-red-400"}`}><LogOut className="w-4 h-4" /></button>
                 </>
               ) : (

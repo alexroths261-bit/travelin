@@ -15,6 +15,7 @@ model User {
   phone     String?
   role      String   @default("user")
   bookings  Booking[]
+  reviews   Review[]
   createdAt DateTime @default(now())
 }
 
@@ -27,6 +28,7 @@ model Destination {
   image       String
   rating      Float     @default(4.5)
   packages    Package[]
+  reviews     Review[]
   createdAt   DateTime  @default(now())
 }
 
@@ -35,6 +37,7 @@ model Package {
   destinationId   String
   destination     Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
   title           String
+  description     String      @default("")
   duration        Int
   pricePerPerson  Int
   meals           String
@@ -52,9 +55,10 @@ model Booking {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   packageId String
-  package   Package  @relation(fields: [packageId], references: [id])
+  package   Package  @relation(fields: [packageId], references: [id], onDelete: Cascade)
   travelers Int
   totalPrice Int
+  travelDate String?
   status    String   @default("pending")
   paymentId String?
   payment   Payment?
@@ -64,10 +68,21 @@ model Booking {
 model Payment {
   id        String   @id @default(cuid())
   bookingId String   @unique
-  booking   Booking  @relation(fields: [bookingId], references: [id])
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   razorpayId String?
   amount    Int
   currency  String   @default("INR")
   status    String   @default("pending")
   createdAt DateTime @default(now())
+}
+
+model Review {
+  id            String      @id @default(cuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  destinationId String
+  destination   Destination @relation(fields: [destinationId], references: [id], onDelete: Cascade)
+  rating        Int
+  comment       String
+  createdAt     DateTime    @default(now())
 }

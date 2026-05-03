@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { X, Minus, Plus, Check, Loader2, CreditCard } from "lucide-react";
+import { Minus, Plus, Check, Loader2, CreditCard, Calendar } from "lucide-react";
 
 interface Pkg {
   id: string;
@@ -12,6 +12,7 @@ interface Pkg {
   airportTransfer: boolean;
   privateCab: boolean;
   flights: boolean;
+  description: string;
   destination: { name: string };
 }
 
@@ -23,6 +24,7 @@ interface BookingModalProps {
 
 export default function BookingModal({ isOpen, onClose, pkg }: BookingModalProps) {
   const [travelers, setTravelers] = useState(1);
+  const [travelDate, setTravelDate] = useState("");
   const [step, setStep] = useState<"details" | "payment" | "success">("details");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,10 +32,12 @@ export default function BookingModal({ isOpen, onClose, pkg }: BookingModalProps
 
   if (!isOpen || !pkg) return null;
 
+  const today = new Date().toISOString().split("T")[0];
   const total = pkg.pricePerPerson * travelers;
 
   const resetAndClose = () => {
     setTravelers(1);
+    setTravelDate("");
     setStep("details");
     setError("");
     setBookingId("");
@@ -41,13 +45,14 @@ export default function BookingModal({ isOpen, onClose, pkg }: BookingModalProps
   };
 
   const handleProceed = async () => {
+    if (!travelDate) { setError("Please select a travel date"); return; }
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packageId: pkg.id, travelers }),
+        body: JSON.stringify({ packageId: pkg.id, travelers, travelDate }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -57,11 +62,8 @@ export default function BookingModal({ isOpen, onClose, pkg }: BookingModalProps
         setBookingId(data.booking.id);
         setStep("payment");
       }
-    } catch {
-      setError("Network error");
-    } finally {
-      setLoading(false);
-    }
+    } catch { setError("Network error"); }
+    finally { setLoading(false); }
   };
 
   const handlePay = async () => {
@@ -74,12 +76,7 @@ export default function BookingModal({ isOpen, onClose, pkg }: BookingModalProps
         body: JSON.stringify({ amount: total, bookingId }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Payment init failed");
-        setLoading(false);
-        return;
-      }
-
+      if (!res.ok) { setError(data.error || "Payment init failed"); setLoading(false); return; }
       const options = {
         key: data.key,
         amount: data.order.amount,
@@ -101,35 +98,39 @@ export default function BookingModal({ isOpen, onClose, pkg }: BookingModalProps
         prefill: { name: "", email: "" },
         theme: { color: "#16a34a" },
       };
-
       const rzp = new (window as any).Razorpay(options);
-      rzp.on("payment.failed", () => {
-        setError("Payment failed. Please try again.");
-        setLoading(false);
-      });
+      rzp.on("payment.failed", () => { setError("Payment failed. Please try again."); setLoading(false); });
       rzp.open();
-    } catch {
-      setError("Network error");
-      setLoading(false);
-    }
+    } catch { setError("Network error"); setLoading(false); }
   };
+
+  const formattedDate = travelDate
+    ? new Date(travelDate + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })
+    : "";
+
+  const endDate = travelDate
+    ? new Date(new Date(travelDate).getTime() + (pkg.duration - 1) * 24 * 60 * 60 * 1000)
+        .toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })
+    : "";
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" onClick={resetAndClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={(e) => e.stopPropagation()}>
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden" onClick={e => e.stopPropagation()}>
         {step === "success" ? (
           <div className="p-10 text-center">
             <div className="w-20 h-20 rounded-full bg-brand-100 flex items-center justify-center mx-auto mb-6"><Check className="w-10 h-10 text-brand-600" /></div>
             <h2 className="font-serif text-2xl font-bold text-gray-900 mb-2">Booking Confirmed!</h2>
             <p className="text-gray-500 text-sm mb-2">Your trip to {pkg.destination.name} is confirmed.</p>
             <p className="text-gray-400 text-xs mb-6">Booking ID: {bookingId}</p>
-            <div className="bg-gray-50 rounded-2xl p-5 mb-6 text-left">
-              <div className="flex justify-between text-sm mb-2"><span className="text-gray-500">Package</span><span className="font-semibold text-gray-900">{pkg.duration}-Day Plan</span></div>
-              <div className="flex justify-between text-sm mb-2"><span className="text-gray-500">Travelers</span><span className="font-semibold text-gray-900">{travelers}</span></div>
+            <div className="bg-gray-50 rounded-2xl p-5 mb-6 text-left space-y-2">
+              <div className="flex justify-between text-sm"><span className="text-gray-500">Package</span><span className="font-semibold text-gray-900">{pkg.duration}-Day Plan</span></div>
+              <div className="flex justify-between text-sm"><span className="text-gray-500">Travel Date</span><span className="font-semibold text-gray-900">{formattedDate}</span></div>
+              {endDate && <div className="flex justify-between text-sm"><span className="text-gray-500">End Date</span><span className="font-semibold text-gray-900">{endDate}</span></div>}
+              <div className="flex justify-between text-sm"><span className="text-gray-500">Travelers</span><span className="font-semibold text-gray-900">{travelers}</span></div>
               <div className="border-t border-gray-200 pt-2 mt-2 flex justify-between"><span className="text-gray-700 font-semibold">Total Paid</span><span className="text-brand-700 font-black text-lg">₹{total.toLocaleString("en-IN")}</span></div>
             </div>
-            <button onClick={resetAndClose} className="w-full py-3 rounded-xl bg-brand-600 text-white font-semibold text-sm hover:bg-brand-700 transition">Done</button>
+            <button onClick={resetAndClose} className="w-full py-3 rounded-xl bg-brand-600 text-white font-semibold text-sm hover:bg-brand-700 transition">View My Bookings</button><button onClick={onClose} className="w-full py-3 rounded-xl border border-gray-200 text-gray-600 font-semibold text-sm hover:bg-gray-50 transition mt-2">Close</button>
           </div>
         ) : (
           <>
@@ -138,7 +139,7 @@ export default function BookingModal({ isOpen, onClose, pkg }: BookingModalProps
                 <h2 className="font-serif text-xl font-bold text-gray-900">{step === "details" ? "Book Your Trip" : "Complete Payment"}</h2>
                 <p className="text-gray-400 text-sm">{pkg.destination.name} • {pkg.duration}-Day Plan</p>
               </div>
-              <button onClick={resetAndClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition text-gray-400"><X className="w-5 h-5" /></button>
+              <button onClick={resetAndClose} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 transition text-gray-400"><i data-lucide="x" className="w-5 h-5" /></button>
             </div>
 
             <div className="p-6">
@@ -151,6 +152,35 @@ export default function BookingModal({ isOpen, onClose, pkg }: BookingModalProps
                     <div className="flex justify-between text-sm"><span className="text-gray-500">Duration</span><span className="font-semibold">{pkg.duration} Days / {pkg.duration - 1} Nights</span></div>
                     <div className="flex justify-between text-sm"><span className="text-gray-500">Meals</span><span className="font-semibold">{pkg.meals}</span></div>
                     <div className="flex justify-between text-sm"><span className="text-gray-500">Guided Tours</span><span className="font-semibold">{pkg.tours}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-500">Airport</span><span className="font-semibold">{pkg.airportTransfer ? "Included" : "Not included"}</span></div>
+                    <div className="flex justify-between text-sm"><span className="text-gray-500">Private Cab</span><span className="font-semibold">{pkg.privateCab ? "Included" : "Not included"}</span></div>
+                  </div>
+
+                  {pkg.description && (
+                    <div className="bg-brand-50 rounded-2xl p-5">
+                      <h4 className="font-bold text-gray-900 text-sm mb-3">Your Itinerary</h4>
+                      <div className="space-y-3">
+                        {pkg.description.split("Day ").filter(Boolean).map((day, i) => {
+                          const parts = day.split(":");
+                          const dayNum = parts[0]?.trim();
+                          const activities = parts[1]?.trim() || "";
+                          return (
+                            <div key={i} className="flex gap-3">
+                              <div className="shrink-0 w-8 h-8 rounded-lg bg-brand-600 text-white flex items-center justify-center text-xs font-bold">D{dayNum}</div>
+                              <p className="text-sm text-gray-600 leading-relaxed">{activities}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2"><Calendar className="w-4 h-4 text-brand-600" /> Travel Start Date</label>
+                    <input type="date" value={travelDate} min={today} onChange={e => setTravelDate(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/10 transition" />
+                    {formattedDate && endDate && (
+                      <p className="text-xs text-brand-600 mt-2 font-medium">Trip: {formattedDate} → {endDate}</p>
+                    )}
                   </div>
 
                   <div>
@@ -182,6 +212,7 @@ export default function BookingModal({ isOpen, onClose, pkg }: BookingModalProps
                     <CreditCard className="w-8 h-8 text-brand-600 mx-auto mb-2" />
                     <p className="text-sm text-gray-500">Amount to pay</p>
                     <p className="text-3xl font-black text-gray-900">₹{total.toLocaleString("en-IN")}</p>
+                    <p className="text-xs text-gray-400 mt-1">{formattedDate} • {travelers} traveler{travelers > 1 ? "s" : ""}</p>
                   </div>
                   <button onClick={handlePay} disabled={loading} className="w-full py-3.5 rounded-xl bg-brand-600 text-white font-bold text-sm hover:bg-brand-700 disabled:opacity-50 transition shadow-lg shadow-brand-600/25 flex items-center justify-center gap-2">
                     {loading ? <><Loader2 className="w-4 h-4 animate-spin" /> Opening Razorpay...</> : "Pay with Razorpay"}

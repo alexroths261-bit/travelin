@@ -10,7 +10,8 @@ export async function POST(request: Request) {
     if (!amount || amount < 1) return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     const keyId = process.env.RAZORPAY_KEY_ID;
     const keySecret = process.env.RAZORPAY_KEY_SECRET;
-    if (!keyId || !keySecret) return NextResponse.json({ error: "Razorpay not configured" }, { status: 500 });
+    console.log("Razorpay config:", { keyId: keyId?.substring(0, 10), hasSecret: !!keySecret });
+    if (!keyId || !keySecret) return NextResponse.json({ error: "Razorpay not configured. KEY=" + (keyId || "missing") }, { status: 500 });
     const razorpay = new Razorpay({ key_id: keyId, key_secret: keySecret });
     const order = await razorpay.orders.create({
       amount: amount * 100,
@@ -20,7 +21,7 @@ export async function POST(request: Request) {
     });
     return NextResponse.json({ order, key: keyId });
   } catch (error: any) {
-    console.error("Razorpay error:", error);
+    console.error("Razorpay FULL error:", error);
     return NextResponse.json({ error: error.message || "Payment init failed" }, { status: 500 });
   }
 }

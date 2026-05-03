@@ -1,4 +1,4 @@
-// Force dynamic - reads cookies at runtime
+// Force dynamic
 export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
@@ -19,8 +19,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const pkg = await prisma.package.create({
       data: {
-        destinationId: body.destinationId, title: body.title, duration: parseInt(body.duration),
-        pricePerPerson: parseInt(body.pricePerPerson), meals: body.meals, tours: parseInt(body.tours),
+        destinationId: body.destinationId, title: body.title, description: body.description || "",
+        duration: parseInt(body.duration), pricePerPerson: parseInt(body.pricePerPerson),
+        meals: body.meals, tours: parseInt(body.tours),
         airportTransfer: body.airportTransfer === "true", privateCab: body.privateCab === "true",
         flights: body.flights === "true", label: body.label || null,
       },
@@ -38,9 +39,11 @@ export async function PUT(request: Request) {
     const pkg = await prisma.package.update({
       where: { id: body.id },
       data: {
-        title: body.title, duration: parseInt(body.duration), pricePerPerson: parseInt(body.pricePerPerson),
-        meals: body.meals, tours: parseInt(body.tours), airportTransfer: body.airportTransfer === "true",
-        privateCab: body.privateCab === "true", flights: body.flights === "true", label: body.label || null,
+        title: body.title, description: body.description || "",
+        duration: parseInt(body.duration), pricePerPerson: parseInt(body.pricePerPerson),
+        meals: body.meals, tours: parseInt(body.tours),
+        airportTransfer: body.airportTransfer === "true", privateCab: body.privateCab === "true",
+        flights: body.flights === "true", label: body.label || null,
       },
       include: { destination: true },
     });
